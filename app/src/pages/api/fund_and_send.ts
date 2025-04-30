@@ -6,20 +6,17 @@ import {
 } from '@solana/web3.js'
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { AnchorProvider } from '@coral-xyz/anchor'
+import { FUNDER_KEY, SOLANA_RPC } from '@/config/server'
 
 const payer = Keypair.fromSecretKey(
-    Uint8Array.from(JSON.parse(process.env.FUNDER_KEY!))
-  )
-
-const solanaUrl = process.env.SOLANA_URL!;
-
+  Uint8Array.from(JSON.parse(FUNDER_KEY))
+)
 const wallet = new NodeWallet(payer);
 const provider = new AnchorProvider(
-  new Connection(solanaUrl),
+  new Connection(SOLANA_RPC),
   wallet,
   {}
 )
-
 
 export default async function handlerFundTransaction(
   req: NextApiRequest,
@@ -29,34 +26,22 @@ export default async function handlerFundTransaction(
     return res.status(405).end()
   }
 
-  console.log("REQ", req.body);
   const data = req.body
-  let transactions: VersionedTransaction[] = []
-  let signedTransactions: VersionedTransaction[] = []
 
-  if (data.length >= 10) {
-    return res.status(400).json({
-      error: 'Too many transactions',
-    })
-  }
-
+  let transaction: VersionedTransaction;
   try {
-    transactions = data.map((serializedTx: any) => {
-      return VersionedTransaction.deserialize(new Uint8Array(Buffer.from(serializedTx)))
-    })
+    transaction =
+      VersionedTransaction.deserialize(new Uint8Array(Buffer.from(data)))
   } catch {
-    console.log("FAILED TO DESERIALIZE");
     return res.status(400).json({
       error: 'Failed to deserialize transactions',
     })
   }
 
-  
-    signedTransactions = await wallet.signAllTransactions(transactions)
-    console.log("SIGNED TRANSACTIONS", signedTransactions.map((tx) => tx.signatures));
-    await provider.sendAll(signedTransactions.map((tx) => ({tx})), {skipPreflight: true})
+  const signedTransaction = await wallet.signTransaction(transaction)
+  await provider.sendAll([{ tx: signedTransaction }], { skipPreflight: true })
 
-    return res.status(200).json({
-        message: "Transactions sent"
-      })
+  return res.status(200).json({
+    message: "Transactions sent"
+  })
 }
