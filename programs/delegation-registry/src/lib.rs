@@ -8,10 +8,32 @@ pub mod delegation_demo {
 
     use super::*;
 
-    pub fn set_delegation(ctx: Context<SetDelegation>, args: SetDelegationArgs) -> Result<()> {
+    pub fn set_delegation(ctx: Context<SetDelegation>) -> Result<()> {
         let delegation = &mut ctx.accounts.delegation;
         delegation.delegator = ctx.accounts.delegator.key();
-        delegation.deadline = args.deadline;
+        Ok(())
+    }
+
+    pub fn transact(ctx: Context<Transact>, data: Vec<u8>) -> Result<()> {
+        let (executor_key, bump) = Pubkey::find_program_address(&[ctx.accounts.delegation.delegator.as_ref()], &ID);
+
+        let instruction = Instruction {
+            program_id: *ctx.remaining_accounts[0].key,
+            accounts: ctx.remaining_accounts[1..].iter().map(|a| a.to_account_metas(Some(a.is_signer || a.key() == executor_key))).flatten().collect(),
+            data,
+        };
+
+        invoke_signed(
+            &instruction,
+            ctx.remaining_accounts,
+            &[&[
+                ctx.accounts.delegation.delegator.as_ref(),
+                &[bump],
+            ]],
+        )?;
+
+        msg!("Transacted");
+
         Ok(())
     }
 }
@@ -20,40 +42,42 @@ pub mod delegation_demo {
 pub struct SetDelegation<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
-    pub delegate: Signer<'info>,
-    pub delegator: Signer<'info>,
+    /// CHECK:
+    pub agent: AccountInfo<'info>,
+    /// CHECK:
+    pub delegator: AccountInfo<'info>,
     #[account(init_if_needed,
         payer = payer,
         space = 8 + Delegation::LEN,
-        seeds = [delegate.key().as_ref()],
+        seeds = [agent.key().as_ref()],
         bump,
     )]
     pub delegation: Account<'info, Delegation>,
     pub system_program: Program<'info, System>,
 }
 
+#[derive(Accounts)]
+pub struct Transact<'info> {
+    pub agent: Signer<'info>,
+    #[account(seeds = [agent.key().as_ref()], bump)]
+    pub delegation: Account<'info, Delegation>,
+}
+
+
 #[account]
 pub struct Delegation {
     pub delegator: Pubkey,
-    pub deadline: i64,
 }
 
 impl Delegation {
-    pub const LEN: usize = 40;
+    pub const LEN: usize = 32;
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize)]
-pub struct SetDelegationArgs {
-    pub deadline: i64,
-}
-
-// #[derive(Accounts)]
-// pub struct Transact<'info> {
-//     pub delegate: Signer<'info>,
-//     #[account(seeds = [b"delegation", delegate.key().as_ref()], bump)]
-//     pub delegation: Account<'info, Delegation>,
-//     pub program_id: AccountInfo<'info>,
+// #[derive(AnchorSerialize, AnchorDeserialize)]
+// pub struct SetDelegationArgs {
+//     pub deadline: i64,
 // }
+
 
 
 //     pub fn transact(ctx: Context<Transact>, data: Vec<u8>) -> Result<()> {

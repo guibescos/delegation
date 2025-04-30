@@ -1,23 +1,32 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { useWallet } from "@solana/wallet-adapter-react";
+import { useAnchorWallet, useWallet } from "@solana/wallet-adapter-react";
 import "@solana/wallet-adapter-react-ui/styles.css";
 import {
   WalletDisconnectButton,
   WalletMultiButton,
 } from "@/components/WalletButton";
-import { Keypair } from "@solana/web3.js";
+import { Keypair, PublicKey, VersionedMessage, VersionedTransaction } from "@solana/web3.js";
 import { useCallback, useState } from "react";
+import { AnchorProvider, Program, Wallet } from "@coral-xyz/anchor";
+import delegationIdl from "../idl/delegation_demo.json"
+import counterIdl from "../idl/counter.json"
+import type { DelegationDemo } from "../idl/delegation_demo"
+import type { Counter } from "../idl/counter"
+import { Connection } from "@solana/web3.js";
+import NodeWallet from "@coral-xyz/anchor/dist/cjs/nodewallet";
 
 export default function Home() {
   const { publicKey, signTransaction, signMessage } = useWallet();
+  const anchorWallet = useAnchorWallet();
 
   const [log, setLog] = useState<string[]>([]);
-
-  const handleClick = useCallback(() => {
+  const [agent, setAgent] = useState<Keypair | null>(null);
+  const handleEnableTrading = useCallback(() => {
     const inner = async () => {
       const newAgent = Keypair.generate();
+
       // setAgent(newAgent);
       const message =
       {
@@ -26,12 +35,27 @@ export default function Home() {
         "nonce": Math.floor(Date.now() / 1000),
       }
 
-      if (!signMessage) {
-        setLog((log) => [...log, "Wallet not connected"]);
-        return;
-      };
+      // if (!signMessage) {
+      //   setLog((log) => [...log, "Wallet not connected"]);
+      //   return;
+      // };
 
-      await signMessage(new Uint8Array(Buffer.from(JSON.stringify(message))));
+
+      // await signMessage(new Uint8Array(Buffer.from(JSON.stringify(message))));
+      console.log("NEW AGENT", newAgent.publicKey.toBase58());
+      setAgent(newAgent);
+
+      await fetch('/api/agent', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          agentAddress: newAgent.publicKey.toBase58(),
+          ownerAddress: publicKey?.toBase58(),
+        }),
+      })
+
     };
     //   if (!publicKey || !signTransaction) return;
     //   setLog(["Getting quote..."]);
@@ -98,9 +122,67 @@ export default function Home() {
       setLog((log) => [...log, error.message]);
       console.error(error);
     });
-  }, []);
+  }, [publicKey, signMessage]);
 
-  const canSwap = publicKey && signTransaction;
+  const handleTrade = useCallback(() => {
+    const inner = async () => {
+
+      console.log("AGENT", agent!.publicKey.toBase58());
+      const provider = new AnchorProvider(
+        new Connection("http://localhost:8899"),
+        new NodeWallet(agent!),
+        {}
+      )
+    
+      const counterProgram : Program<Counter> = new Program<Counter>(
+        counterIdl as Counter,
+        provider
+      )
+    
+      const delegationProgram : Program<DelegationDemo> = new Program<DelegationDemo>(
+        delegationIdl as DelegationDemo,
+        provider
+      )
+
+      const counterInstruction = await counterProgram.methods.setCounter().accounts({
+        payer: new PublicKey("GguFh5trQaECMxfdUnf124k8pV9XRbtxr9y1Xsr8LDhf"),
+        owner: publicKey!,
+        agentOrOwner: PublicKey.findProgramAddressSync(
+          [publicKey!.toBuffer()],
+          delegationProgram.programId
+        )[0]
+      }).instruction();
+
+      counterInstruction.keys[2].isSigner = false;
+
+      const delegationTransaction = await delegationProgram.methods.transact(counterInstruction.data).accounts({
+        agent: new PublicKey(agent!.publicKey.toBase58()),
+      }).remainingAccounts([{
+        pubkey: counterProgram.programId,
+        isWritable: false,
+        isSigner: false
+      }, ...counterInstruction.keys]).transaction();
+      
+      delegationTransaction.recentBlockhash = (await provider.connection.getLatestBlockhash()).blockhash;
+      delegationTransaction.feePayer =  new PublicKey("GguFh5trQaECMxfdUnf124k8pV9XRbtxr9y1Xsr8LDhf");
+      const signedTransaction = await new NodeWallet(agent!).signTransaction(delegationTransaction);
+
+      const response = await fetch('/api/fund_and_send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify([Buffer.from(signedTransaction.serialize({requireAllSignatures: false}))]),
+      })
+      console.log("RESPONSE", response);
+    }
+    inner().catch((error) => {
+      setLog((log) => [...log, error.message]);
+      console.error(error);
+    });
+  }, [agent]);
+
+  const canSwap = publicKey && signMessage;
   return (
     <main>
       <div className="m-auto w-2/4 parent space-y-2">
@@ -108,10 +190,17 @@ export default function Home() {
         <WalletMultiButton />
         <WalletDisconnectButton />
         {canSwap && (
-          <Button onClick={handleClick}>
+          <Button onClick={handleEnableTrading}>
             Enable Trading
           </Button>
         )}
+        {
+          agent && (
+            <Button onClick={handleTrade}>
+              Trade
+            </Button>
+          )
+        }
         <pre>
           {log.map((line: string, i: number) => (
             <div key={i}>{line}</div>

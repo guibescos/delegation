@@ -19,6 +19,7 @@
     "test:types": "tsc"
   },
   "dependencies": {
+    "@coral-xyz/anchor": "^0.31.1",
     "@radix-ui/react-slot": "^1.1.1",
     "@solana/wallet-adapter-base": "^0.9.23",
     "@solana/wallet-adapter-react": "^0.15.35",

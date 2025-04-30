@@ -1,0 +1,119 @@
+{
+  "address": "5QdNueoih49C6pmYCaUvX5TN2Sar47FQkGXKMpt5HmHg",
+  "metadata": {
+    "name": "delegation_demo",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Created with Anchor"
+  },
+  "instructions": [
+    {
+      "name": "set_delegation",
+      "discriminator": [
+        28,
+        231,
+        56,
+        197,
+        225,
+        173,
+        129,
+        74
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "agent"
+        },
+        {
+          "name": "delegator"
+        },
+        {
+          "name": "delegation",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "agent"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "transact",
+      "discriminator": [
+        217,
+        149,
+        130,
+        143,
+        221,
+        52,
+        252,
+        119
+      ],
+      "accounts": [
+        {
+          "name": "agent",
+          "signer": true
+        },
+        {
+          "name": "delegation",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "agent"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "data",
+          "type": "bytes"
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "Delegation",
+      "discriminator": [
+        237,
+        90,
+        140,
+        159,
+        124,
+        255,
+        243,
+        80
+      ]
+    }
+  ],
+  "types": [
+    {
+      "name": "Delegation",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "delegator",
+            "type": "pubkey"
+          }
+        ]
+      }
+    }
+  ]
+}
