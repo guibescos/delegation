@@ -27,6 +27,25 @@ export default function Home() {
     const inner = async () => {
       const newAgent = Keypair.generate();
 
+      const provider = new AnchorProvider(
+        new Connection("http://localhost:8899"),
+        new NodeWallet(newAgent),
+        {}
+      )
+
+      const delegationProgram : Program<DelegationDemo> = new Program<DelegationDemo>(
+        delegationIdl as DelegationDemo,
+        provider
+      )
+
+
+      const transaction = await delegationProgram.methods.setDelegation().accounts({
+        payer: new PublicKey("GguFh5trQaECMxfdUnf124k8pV9XRbtxr9y1Xsr8LDhf"),
+        delegator: new PublicKey(publicKey!.toBase58()),
+        delegation: new PublicKey(newAgent!.publicKey.toBase58()),
+      }).transaction();
+
+
       // setAgent(newAgent);
       const message =
       {
@@ -40,20 +59,20 @@ export default function Home() {
       //   return;
       // };
 
+      transaction.recentBlockhash = (await provider.connection.getLatestBlockhash()).blockhash;
+      transaction.feePayer =  new PublicKey("GguFh5trQaECMxfdUnf124k8pV9XRbtxr9y1Xsr8LDhf");
+      const signedTransaction = await new NodeWallet(newAgent!).signTransaction(transaction);
 
       // await signMessage(new Uint8Array(Buffer.from(JSON.stringify(message))));
       console.log("NEW AGENT", newAgent.publicKey.toBase58());
       setAgent(newAgent);
 
-      await fetch('/api/agent', {
+      await fetch('/api/fund_and_send', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          agentAddress: newAgent.publicKey.toBase58(),
-          ownerAddress: publicKey?.toBase58(),
-        }),
+        body:  JSON.stringify([Buffer.from(signedTransaction.serialize({requireAllSignatures: false}))]),
       })
 
     };
@@ -133,39 +152,35 @@ export default function Home() {
         new NodeWallet(agent!),
         {}
       )
+      
     
       const counterProgram : Program<Counter> = new Program<Counter>(
         counterIdl as Counter,
         provider
       )
-    
-      const delegationProgram : Program<DelegationDemo> = new Program<DelegationDemo>(
-        delegationIdl as DelegationDemo,
-        provider
-      )
 
-      const counterInstruction = await counterProgram.methods.setCounter().accounts({
+      const transaction = await counterProgram.methods.setCounter().accountsPartial({
         payer: new PublicKey("GguFh5trQaECMxfdUnf124k8pV9XRbtxr9y1Xsr8LDhf"),
-        owner: publicKey!,
-        agentOrOwner: PublicKey.findProgramAddressSync(
+        delegation: agent!.publicKey,
+        counter: PublicKey.findProgramAddressSync(
           [publicKey!.toBuffer()],
-          delegationProgram.programId
+          counterProgram.programId
         )[0]
-      }).instruction();
+      }).transaction();
 
-      counterInstruction.keys[2].isSigner = false;
+      // counterInstruction.keys[2].isSigner = false;
 
-      const delegationTransaction = await delegationProgram.methods.transact(counterInstruction.data).accounts({
-        agent: new PublicKey(agent!.publicKey.toBase58()),
-      }).remainingAccounts([{
-        pubkey: counterProgram.programId,
-        isWritable: false,
-        isSigner: false
-      }, ...counterInstruction.keys]).transaction();
+      // const transaction = await delegationProgram.methods.transact(counterInstruction.data).accounts({
+      //   agent: new PublicKey(agent!.publicKey.toBase58()),
+      // }).remainingAccounts([{
+      //   pubkey: counterProgram.programId,
+      //   isWritable: false,
+      //   isSigner: false
+      // }, ...counterInstruction.keys]).transaction();
       
-      delegationTransaction.recentBlockhash = (await provider.connection.getLatestBlockhash()).blockhash;
-      delegationTransaction.feePayer =  new PublicKey("GguFh5trQaECMxfdUnf124k8pV9XRbtxr9y1Xsr8LDhf");
-      const signedTransaction = await new NodeWallet(agent!).signTransaction(delegationTransaction);
+      transaction.recentBlockhash = (await provider.connection.getLatestBlockhash()).blockhash;
+      transaction.feePayer =  new PublicKey("GguFh5trQaECMxfdUnf124k8pV9XRbtxr9y1Xsr8LDhf");
+      const signedTransaction = await new NodeWallet(agent!).signTransaction(transaction);
 
       const response = await fetch('/api/fund_and_send', {
         method: 'POST',

@@ -32,10 +32,7 @@ export type Counter = {
           "signer": true
         },
         {
-          "name": "owner"
-        },
-        {
-          "name": "agentOrOwner",
+          "name": "delegation",
           "signer": true
         },
         {
@@ -45,7 +42,8 @@ export type Counter = {
             "seeds": [
               {
                 "kind": "account",
-                "path": "owner"
+                "path": "delegation.delegator",
+                "account": "delegation"
               }
             ]
           }
@@ -71,6 +69,19 @@ export type Counter = {
         124,
         25
       ]
+    },
+    {
+      "name": "delegation",
+      "discriminator": [
+        237,
+        90,
+        140,
+        159,
+        124,
+        255,
+        243,
+        80
+      ]
     }
   ],
   "types": [
@@ -82,6 +93,18 @@ export type Counter = {
           {
             "name": "counter",
             "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "delegation",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "delegator",
+            "type": "pubkey"
           }
         ]
       }

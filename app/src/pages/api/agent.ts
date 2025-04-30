@@ -30,7 +30,7 @@ const program : Program<DelegationDemo> = new Program(
 
     const {agentAddress, ownerAddress} = req.body
     program.methods.setDelegation().accounts({
-        agent: new PublicKey(agentAddress),
+          delegation: new PublicKey(agentAddress),
         delegator: new PublicKey(ownerAddress),
     }).rpc()
 

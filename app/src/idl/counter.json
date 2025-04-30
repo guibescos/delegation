@@ -26,10 +26,7 @@
           "signer": true
         },
         {
-          "name": "owner"
-        },
-        {
-          "name": "agent_or_owner",
+          "name": "delegation",
           "signer": true
         },
         {
@@ -39,7 +36,8 @@
             "seeds": [
               {
                 "kind": "account",
-                "path": "owner"
+                "path": "delegation.delegator",
+                "account": "Delegation"
               }
             ]
           }
@@ -65,6 +63,19 @@
         124,
         25
       ]
+    },
+    {
+      "name": "Delegation",
+      "discriminator": [
+        237,
+        90,
+        140,
+        159,
+        124,
+        255,
+        243,
+        80
+      ]
     }
   ],
   "types": [
@@ -76,6 +87,18 @@
           {
             "name": "counter",
             "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Delegation",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "delegator",
+            "type": "pubkey"
           }
         ]
       }

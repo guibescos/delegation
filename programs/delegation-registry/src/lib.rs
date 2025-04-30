@@ -43,15 +43,8 @@ pub struct SetDelegation<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
     /// CHECK:
-    pub agent: AccountInfo<'info>,
-    /// CHECK:
     pub delegator: AccountInfo<'info>,
-    #[account(init_if_needed,
-        payer = payer,
-        space = 8 + Delegation::LEN,
-        seeds = [agent.key().as_ref()],
-        bump,
-    )]
+    #[account(init, payer = payer, space = 8 +Delegation::LEN)]
     pub delegation: Account<'info, Delegation>,
     pub system_program: Program<'info, System>,
 }

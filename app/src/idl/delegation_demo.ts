@@ -32,22 +32,12 @@ export type DelegationDemo = {
           "signer": true
         },
         {
-          "name": "agent"
-        },
-        {
           "name": "delegator"
         },
         {
           "name": "delegation",
           "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "account",
-                "path": "agent"
-              }
-            ]
-          }
+          "signer": true
         },
         {
           "name": "systemProgram",
