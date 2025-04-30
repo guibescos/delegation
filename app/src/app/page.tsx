@@ -10,9 +10,9 @@ import {
 import { Keypair, PublicKey, VersionedMessage, VersionedTransaction } from "@solana/web3.js";
 import { useCallback, useState } from "react";
 import { AnchorProvider, Program, Wallet } from "@coral-xyz/anchor";
-import delegationIdl from "../idl/delegation_demo.json"
+import delegationIdl from "../idl/delegation_registry.json"
 import counterIdl from "../idl/counter.json"
-import type { DelegationDemo } from "../idl/delegation_demo"
+import type { DelegationRegistry } from "../idl/delegation_registry"
 import type { Counter } from "../idl/counter"
 import { Connection } from "@solana/web3.js";
 import NodeWallet from "@coral-xyz/anchor/dist/cjs/nodewallet";
@@ -33,8 +33,8 @@ export default function Home() {
         {}
       )
 
-      const delegationProgram : Program<DelegationDemo> = new Program<DelegationDemo>(
-        delegationIdl as DelegationDemo,
+      const delegationProgram : Program<DelegationRegistry> = new Program<DelegationRegistry>(
+        delegationIdl as DelegationRegistry,
         provider
       )
 
@@ -42,7 +42,7 @@ export default function Home() {
       const transaction = await delegationProgram.methods.setDelegation().accounts({
         payer: new PublicKey("GguFh5trQaECMxfdUnf124k8pV9XRbtxr9y1Xsr8LDhf"),
         delegator: new PublicKey(publicKey!.toBase58()),
-        delegation: new PublicKey(newAgent!.publicKey.toBase58()),
+        agent: new PublicKey(newAgent!.publicKey.toBase58()),
       }).transaction();
 
 
@@ -161,7 +161,7 @@ export default function Home() {
 
       const transaction = await counterProgram.methods.setCounter().accountsPartial({
         payer: new PublicKey("GguFh5trQaECMxfdUnf124k8pV9XRbtxr9y1Xsr8LDhf"),
-        delegation: agent!.publicKey,
+        agent: agent!.publicKey,
         counter: PublicKey.findProgramAddressSync(
           [publicKey!.toBuffer()],
           counterProgram.programId

@@ -1,14 +1,20 @@
-{
+/**
+ * Program IDL in camelCase format in order to be used in JS/TS.
+ *
+ * Note that this is only a type helper and is not the actual IDL. The original
+ * IDL can be found at `target/idl/delegation_registry.json`.
+ */
+export type DelegationRegistry = {
   "address": "5QdNueoih49C6pmYCaUvX5TN2Sar47FQkGXKMpt5HmHg",
   "metadata": {
-    "name": "delegation_demo",
+    "name": "delegationRegistry",
     "version": "0.1.0",
     "spec": "0.1.0",
     "description": "Created with Anchor"
   },
   "instructions": [
     {
-      "name": "set_delegation",
+      "name": "setDelegation",
       "discriminator": [
         28,
         231,
@@ -29,57 +35,21 @@
           "name": "delegator"
         },
         {
-          "name": "delegation",
+          "name": "agent",
           "writable": true,
           "signer": true
         },
         {
-          "name": "system_program",
+          "name": "systemProgram",
           "address": "11111111111111111111111111111111"
         }
       ],
       "args": []
-    },
-    {
-      "name": "transact",
-      "discriminator": [
-        217,
-        149,
-        130,
-        143,
-        221,
-        52,
-        252,
-        119
-      ],
-      "accounts": [
-        {
-          "name": "agent",
-          "signer": true
-        },
-        {
-          "name": "delegation",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "account",
-                "path": "agent"
-              }
-            ]
-          }
-        }
-      ],
-      "args": [
-        {
-          "name": "data",
-          "type": "bytes"
-        }
-      ]
     }
   ],
   "accounts": [
     {
-      "name": "Delegation",
+      "name": "delegation",
       "discriminator": [
         237,
         90,
@@ -94,7 +64,7 @@
   ],
   "types": [
     {
-      "name": "Delegation",
+      "name": "delegation",
       "type": {
         "kind": "struct",
         "fields": [
@@ -106,4 +76,4 @@
       }
     }
   ]
-}
+};

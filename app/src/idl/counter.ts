@@ -32,7 +32,7 @@ export type Counter = {
           "signer": true
         },
         {
-          "name": "delegation",
+          "name": "agent",
           "signer": true
         },
         {
@@ -42,7 +42,7 @@ export type Counter = {
             "seeds": [
               {
                 "kind": "account",
-                "path": "delegation.delegator",
+                "path": "agent.delegator",
                 "account": "delegation"
               }
             ]
