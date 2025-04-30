@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { useAnchorWallet, useConnection, useWallet } from "@solana/wallet-adapter-react";
+import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import "@solana/wallet-adapter-react-ui/styles.css";
 import {
   WalletDisconnectButton,
@@ -18,15 +18,22 @@ import NodeWallet from "@coral-xyz/anchor/dist/cjs/nodewallet";
 
 const payer = process.env.NEXT_PUBLIC_FUNDER_KEY ? new PublicKey(process.env.NEXT_PUBLIC_FUNDER_KEY) : new PublicKey("GguFh5trQaECMxfdUnf124k8pV9XRbtxr9y1Xsr8LDhf");
 
+function getCounterAddress(owner : PublicKey){
+  return PublicKey.findProgramAddressSync(
+    [owner.toBuffer()],
+    new PublicKey(counterIdl.address)
+  )[0]
+}
+
 export default function Home() {
   const { connection } = useConnection();
   const [log, setLog] = useState<string[]>([]);
   const [agent, setAgent] = useState<Keypair | null>(null);
-
+  const [counter, setCounter] = useState<number | null>(null);
   const provider = new AnchorProvider(
     connection,
     {} as Wallet,
-    {}
+    {commitment: "processed"}
   )
 
   const counterProgram : Program<Counter> = new Program<Counter>(
@@ -36,10 +43,15 @@ export default function Home() {
 
   const delegationProgram : Program<DelegationRegistry> = new Program<DelegationRegistry>(
     delegationIdl as DelegationRegistry,
-    provider
+    provider,
   )
 
   const { publicKey, signMessage } = useWallet();
+
+  const refreshCounter = useCallback(async () => {
+    const counter = await counterProgram.account.counter.fetchNullable(getCounterAddress(publicKey!));
+    setCounter(counter? counter.counter : 0);
+  }, [publicKey]);
 
   const handleEnableTrading = useCallback(() => {
     const inner = async () => {
@@ -72,6 +84,7 @@ export default function Home() {
         body:  JSON.stringify(Buffer.from(signedTransaction.serialize({requireAllSignatures: false}))),
       })
 
+      await refreshCounter();
     };
     inner().catch((error) => {
       setLog((log) => [...log, error.message]);
@@ -81,7 +94,7 @@ export default function Home() {
 
   const handleTrade = useCallback(() => {
     const inner = async () => {
-      const transaction = await counterProgram.methods.setCounter().accountsPartial({
+      const transaction = await counterProgram.methods.increment().accountsPartial({
         payer: payer,
         agent: agent!.publicKey,
         counter: PublicKey.findProgramAddressSync(
@@ -101,6 +114,7 @@ export default function Home() {
         },
         body: JSON.stringify(Buffer.from(signedTransaction.serialize({requireAllSignatures: false}))),
       })
+      await refreshCounter();
     }
     inner().catch((error) => {
       setLog((log) => [...log, error.message]);
@@ -128,6 +142,9 @@ export default function Home() {
             </Button>
           )
         }
+        <pre>
+          {counter !== null && `Counter: ${counter}`}
+        </pre>
         <pre>
           {log.map((line: string, i: number) => (
             <div key={i}>{line}</div>

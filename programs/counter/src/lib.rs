@@ -6,7 +6,7 @@ declare_id!("5oCzLdFoo8qqeo5ftdLcaXpRwSAbQGppzLids5Lo512G");
 #[program]
 pub mod counter {
     use super::*;
-    pub fn set_counter(ctx: Context<Increment>) -> Result<()> {
+    pub fn increment(ctx: Context<Increment>) -> Result<()> {
         ctx.accounts.counter.counter+= 1;
         Ok(())
     }

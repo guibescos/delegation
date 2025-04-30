@@ -14,16 +14,16 @@ export type Counter = {
   },
   "instructions": [
     {
-      "name": "setCounter",
+      "name": "increment",
       "discriminator": [
-        98,
-        68,
-        192,
-        166,
-        115,
-        7,
-        171,
-        39
+        11,
+        18,
+        104,
+        9,
+        104,
+        174,
+        59,
+        33
       ],
       "accounts": [
         {
