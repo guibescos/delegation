@@ -58,7 +58,7 @@ export default function Home() {
     setLeaderboardData(counterAccounts.map((counter) => ({
       owner: counter.account.owner.toBase58(),
       value: counter.account.counter.toNumber(),
-    }));
+    })));
     
   }, [connection]);
 
