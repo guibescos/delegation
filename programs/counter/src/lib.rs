@@ -1,13 +1,14 @@
 use anchor_lang::prelude::*;
 use delegation_registry::Delegation;
 
-declare_id!("5oCzLdFoo8qqeo5ftdLcaXpRwSAbQGppzLids5Lo512G");
+declare_id!("9k76vmCCxihurhKTtgQ8unmjpm3CgZCkfr32Dpp2dmKm");
 
 #[program]
 pub mod counter {
     use super::*;
     pub fn increment(ctx: Context<Increment>) -> Result<()> {
         ctx.accounts.counter.counter+= 1;
+        ctx.accounts.counter.owner = ctx.accounts.agent.delegator;
         Ok(())
     }
 }
@@ -25,9 +26,10 @@ pub struct Increment<'info> {
 
 #[account]
 pub struct Counter {
+    pub owner: Pubkey,
     pub counter : u64
 }
 
 impl Counter {
-    pub const LEN: usize = 8;
+    pub const LEN: usize = 32 + 8;
 }

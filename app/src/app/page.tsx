@@ -15,6 +15,8 @@ import counterIdl from "../idl/counter.json"
 import type { DelegationRegistry } from "../idl/delegation_registry"
 import type { Counter } from "../idl/counter"
 import NodeWallet from "@coral-xyz/anchor/dist/cjs/nodewallet";
+import { Table, TableHeader, TableRow, TableHead, TableCell } from "@/components/ui/table";
+import { useEffect } from "react";
 
 const payer = process.env.NEXT_PUBLIC_FUNDER_KEY ? new PublicKey(process.env.NEXT_PUBLIC_FUNDER_KEY) : new PublicKey("GguFh5trQaECMxfdUnf124k8pV9XRbtxr9y1Xsr8LDhf");
 
@@ -27,9 +29,10 @@ function getCounterAddress(owner : PublicKey){
 
 export default function Home() {
   const { connection } = useConnection();
-  const [log, setLog] = useState<string[]>([]);
   const [agent, setAgent] = useState<Keypair | null>(null);
   const [counter, setCounter] = useState<number | null>(null);
+  const [leaderBoardData, setLeaderboardData] = useState<{owner: string, value: number}[]>([]);
+  
   const provider = new AnchorProvider(
     connection,
     {} as Wallet,
@@ -48,9 +51,40 @@ export default function Home() {
 
   const { publicKey, signMessage } = useWallet();
 
+  const fetchAllAccounts = useCallback(async () => {
+    if (!connection) return;
+    const counterAccounts = await counterProgram.account.counter.all();
+
+    setLeaderboardData(counterAccounts.map((counter) => ({
+      owner: counter.account.owner.toBase58(),
+      value: counter.account.counter.toNumber(),
+    })));
+    
+  }, [connection]);
+
+  useEffect(() => {
+    fetchAllAccounts();
+  }, [fetchAllAccounts]);
+
+  useEffect(() => {
+    setCounter(null);
+    setAgent(null);
+  }, [publicKey]);
+
+  useEffect(() => {
+    if (publicKey) {
+      const userIndex = leaderBoardData.findIndex((account) => account.owner === publicKey.toBase58());
+      if (userIndex === -1) {
+        setLeaderboardData([...leaderBoardData, {owner: publicKey.toBase58(), value: counter ? counter : 0}]);
+      } else {
+        setLeaderboardData([...leaderBoardData.slice(0, userIndex), {owner: publicKey.toBase58(), value: counter ? counter : leaderBoardData[userIndex]!.value}, ...leaderBoardData.slice(userIndex + 1)]);
+      }
+    }
+  }, [counter, publicKey]);
+
   const refreshCounter = useCallback(async () => {
     const counter = await counterProgram.account.counter.fetchNullable(getCounterAddress(publicKey!));
-    setCounter(counter? counter.counter : 0);
+    setCounter(counter? counter.counter.toNumber() : 0);
   }, [publicKey]);
 
   const handleEnableTrading = useCallback(() => {
@@ -84,10 +118,8 @@ export default function Home() {
         body:  JSON.stringify(Buffer.from(signedTransaction.serialize({requireAllSignatures: false}))),
       })
 
-      await refreshCounter();
     };
     inner().catch((error) => {
-      setLog((log) => [...log, error.message]);
       console.error(error);
     });
   }, [publicKey, signMessage]);
@@ -117,7 +149,6 @@ export default function Home() {
       await refreshCounter();
     }
     inner().catch((error) => {
-      setLog((log) => [...log, error.message]);
       console.error(error);
     });
   }, [agent]);
@@ -127,10 +158,10 @@ export default function Home() {
   return (
     <main>
       <div className="m-auto w-2/4 parent space-y-2">
-        <h1>Delegation Demo</h1>
+        <h1>UX Demo</h1>
         <WalletMultiButton />
         <WalletDisconnectButton />
-        {canEnableTrading && (
+        {canEnableTrading && !canTrade && (
           <Button onClick={handleEnableTrading}>
             Enable Trading
           </Button>
@@ -142,14 +173,20 @@ export default function Home() {
             </Button>
           )
         }
-        <pre>
-          {counter !== null && `Counter: ${counter}`}
-        </pre>
-        <pre>
-          {log.map((line: string, i: number) => (
-            <div key={i}>{line}</div>
-          ))}
-        </pre>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Address</TableHead>
+              <TableHead>Number of Trades</TableHead>
+            </TableRow>
+            {leaderBoardData.sort((a, b) => b.value - a.value).map((account) => (
+              <TableRow key={account.owner} className={publicKey && account.owner === publicKey.toBase58() ? "font-bold" : ""}>
+                <TableCell>{account.owner} {publicKey && account.owner === publicKey.toBase58() ? " (you)" : ""}</TableCell>
+                <TableCell>{account.value}</TableCell>
+              </TableRow>
+            ))}
+          </TableHeader>
+        </Table>
       </div>
     </main>
   );
