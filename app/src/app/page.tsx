@@ -139,13 +139,24 @@ export default function Home() {
       transaction.feePayer =  payer;
       const signedTransaction = await new NodeWallet(agent!).signTransaction(transaction);
 
-      await fetch('/api/fund_and_send', {
+      const time = Date.now();
+      const counterAddress = getCounterAddress(publicKey!);
+      const promise = new Promise<void>((resolve) => {
+        connection.onAccountChange(counterAddress, () => {
+          resolve();
+        }, "processed");
+      });
+
+      fetch('/api/fund_and_send', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(Buffer.from(signedTransaction.serialize({requireAllSignatures: false}))),
       })
+
+      await promise;
+      console.log("time taken", Date.now() - time);
       await refreshCounter();
     }
     inner().catch((error) => {

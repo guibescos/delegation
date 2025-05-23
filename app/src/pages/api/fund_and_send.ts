@@ -39,7 +39,7 @@ export default async function handlerFundTransaction(
   }
 
   const signedTransaction = await wallet.signTransaction(transaction)
-  await provider.sendAndConfirm(signedTransaction, [], {skipPreflight: true, commitment:"processed"})
+  await provider.connection.sendRawTransaction(signedTransaction.serialize(), {skipPreflight: true})
 
   return res.status(200).json({
     message: "Transactions sent"
