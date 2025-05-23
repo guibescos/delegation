@@ -8,7 +8,7 @@ import {
   WalletMultiButton,
 } from "@/components/WalletButton";
 import { Keypair, PublicKey } from "@solana/web3.js";
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { AnchorProvider, Program, Wallet } from "@coral-xyz/anchor";
 import delegationIdl from "../idl/delegation_registry.json"
 import counterIdl from "../idl/counter.json"
@@ -32,7 +32,9 @@ export default function Home() {
   const [agent, setAgent] = useState<Keypair | null>(null);
   const [counter, setCounter] = useState<number | null>(null);
   const [leaderBoardData, setLeaderboardData] = useState<{owner: string, value: number}[]>([]);
-  
+  const [lastTradeLatency, setLastTradeLatency] = useState<number | null>(null);
+  const nextResolve = useRef<(() => void) | null>(null);
+  const nextPromise = useRef<Promise<void> | null>(null);
   const provider = new AnchorProvider(
     connection,
     {} as Wallet,
@@ -62,6 +64,8 @@ export default function Home() {
     
   }, [connection]);
 
+
+
   useEffect(() => {
     fetchAllAccounts();
   }, [fetchAllAccounts]);
@@ -69,6 +73,26 @@ export default function Home() {
   useEffect(() => {
     setCounter(null);
     setAgent(null);
+    setLastTradeLatency(null);
+
+    if (publicKey) {
+      nextPromise.current = new Promise<void>((resolve) => {
+        nextResolve.current = resolve; 
+      });
+      const subscriptionId = connection.onAccountChange(getCounterAddress(publicKey!), () => {
+        if (nextResolve.current) {
+          nextResolve.current();
+        }
+        nextPromise.current = new Promise<void>((resolve) => {
+          nextResolve.current = resolve;
+        });
+      }, "processed");
+      return () => {
+          connection.removeAccountChangeListener(subscriptionId);
+        
+      }
+    }
+    return () => {};
   }, [publicKey]);
 
   useEffect(() => {
@@ -138,15 +162,9 @@ export default function Home() {
       transaction.recentBlockhash = (await provider.connection.getLatestBlockhash()).blockhash;
       transaction.feePayer =  payer;
       const signedTransaction = await new NodeWallet(agent!).signTransaction(transaction);
+      
 
       const time = Date.now();
-      const counterAddress = getCounterAddress(publicKey!);
-      const promise = new Promise<void>((resolve) => {
-        connection.onAccountChange(counterAddress, () => {
-          resolve();
-        }, "processed");
-      });
-
       fetch('/api/fund_and_send', {
         method: 'POST',
         headers: {
@@ -154,9 +172,9 @@ export default function Home() {
         },
         body: JSON.stringify(Buffer.from(signedTransaction.serialize({requireAllSignatures: false}))),
       })
+      await nextPromise.current;
 
-      await promise;
-      console.log("time taken", Date.now() - time);
+      setLastTradeLatency(Date.now() - time);
       await refreshCounter();
     }
     inner().catch((error) => {
@@ -184,6 +202,9 @@ export default function Home() {
             </Button>
           )
         }
+        {canTrade && lastTradeLatency && (
+          <p>Last trade latency: {lastTradeLatency}ms</p>
+        )}
         <Table>
           <TableHeader>
             <TableRow>
