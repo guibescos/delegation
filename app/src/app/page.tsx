@@ -58,9 +58,9 @@ export default function Home() {
     setLeaderboardData(counterAccounts.map((counter) => ({
       owner: counter.account.owner.toBase58(),
       value: counter.account.counter.toNumber(),
-    })).sort((a, b) => b.value - a.value));
+    }));
     
-  }, []);
+  }, [connection]);
 
   useEffect(() => {
     fetchAllAccounts();
@@ -73,7 +73,7 @@ export default function Home() {
 
   useEffect(() => {
     if (publicKey) {
-      let userIndex = leaderBoardData.findIndex((account) => account.owner === publicKey.toBase58());
+      const userIndex = leaderBoardData.findIndex((account) => account.owner === publicKey.toBase58());
       if (userIndex === -1) {
         setLeaderboardData([...leaderBoardData, {owner: publicKey.toBase58(), value: counter ? counter : 0}]);
       } else {
@@ -83,7 +83,6 @@ export default function Home() {
   }, [counter, publicKey]);
 
   const refreshCounter = useCallback(async () => {
-    console.log("refreshing counter for ", publicKey?.toBase58());
     const counter = await counterProgram.account.counter.fetchNullable(getCounterAddress(publicKey!));
     setCounter(counter? counter.counter.toNumber() : 0);
   }, [publicKey]);
