@@ -35,6 +35,7 @@ export default function Home() {
   const [lastTradeLatency, setLastTradeLatency] = useState<number | null>(null);
   const nextResolve = useRef<(() => void) | null>(null);
   const nextPromise = useRef<Promise<void> | null>(null);
+  const [loading, setLoading] = useState(false);
   const provider = new AnchorProvider(
     connection,
     {} as Wallet,
@@ -141,7 +142,6 @@ export default function Home() {
         },
         body:  JSON.stringify(Buffer.from(signedTransaction.serialize({requireAllSignatures: false}))),
       })
-
     };
     inner().catch((error) => {
       console.error(error);
@@ -150,6 +150,7 @@ export default function Home() {
 
   const handleTrade = useCallback(() => {
     const inner = async () => {
+      setLoading(true);
       const transaction = await counterProgram.methods.increment().accountsPartial({
         payer: payer,
         agent: agent!.publicKey,
@@ -176,8 +177,10 @@ export default function Home() {
 
       setLastTradeLatency(Date.now() - time);
       await refreshCounter();
+      setLoading(false);
     }
     inner().catch((error) => {
+      setLoading(false);
       console.error(error);
     });
   }, [agent]);
@@ -197,7 +200,7 @@ export default function Home() {
         )}
         {
           canTrade && (
-            <Button onClick={handleTrade}>
+            <Button onClick={handleTrade} loading={loading}>
               Trade
             </Button>
           )
