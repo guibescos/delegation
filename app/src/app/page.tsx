@@ -124,8 +124,6 @@ export default function Home() {
   const handleEnableTrading = useCallback(() => {
     const inner = async () => {
       const newAgent = Keypair.generate();
-      setAgent(newAgent);
-      localStorage.setItem(`agent-${publicKey!.toBase58()}`, JSON.stringify(Array.from(newAgent.secretKey)));
 
       const transaction = await delegationProgram.methods.setDelegation().accounts({
         payer: payer,
@@ -152,7 +150,10 @@ export default function Home() {
         },
         body:  JSON.stringify(Buffer.from(signedTransaction.serialize({requireAllSignatures: false}))),
       })
+      setAgent(newAgent);
+      localStorage.setItem(`agent-${publicKey!.toBase58()}`, JSON.stringify(Array.from(newAgent.secretKey)));
     };
+
     inner().catch((error) => {
       console.error(error);
     });
@@ -203,7 +204,7 @@ export default function Home() {
     inner().catch((error) => {
       console.error(error);
     });
-  }, []);
+  }, [publicKey]);
 
   const canEnableTrading = publicKey && signMessage;
   const canTrade = agent && publicKey;
