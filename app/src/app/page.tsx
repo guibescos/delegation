@@ -214,7 +214,7 @@ export default function Home() {
   return (
     <main>
       <div className="m-auto w-2/4 parent space-y-2">
-        <h1>UX Demo</h1>
+        <h1>Gasless Trading Demo</h1>
         <WalletMultiButton />
         <WalletDisconnectButton />
         {canEnableTrading && !canTrade && (
