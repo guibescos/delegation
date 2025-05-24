@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
 
+const SIZES = [72, 48];
+
 export const metadata = {
   title: {
     default: "Gasless Trading Demo",
@@ -23,6 +25,11 @@ export const metadata = {
         type: "image/x-icon",
         url: "/favicon-light.ico",
       },
+      ...SIZES.map((size) => ({
+        type: "image/png",
+        sizes: `${size}x${size}`,
+        url: `/favicon-${size}x${size}.png`,
+      })),
     ],
     apple: {
       url: "/apple-touch-icon.png",
