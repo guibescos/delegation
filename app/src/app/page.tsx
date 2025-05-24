@@ -123,6 +123,7 @@ export default function Home() {
 
   const handleEnableTrading = useCallback(() => {
     const inner = async () => {
+      setLoading(true);
       const newAgent = Keypair.generate();
 
       const transaction = await delegationProgram.methods.setDelegation().accounts({
@@ -152,9 +153,11 @@ export default function Home() {
       })
       setAgent(newAgent);
       localStorage.setItem(`agent-${publicKey!.toBase58()}`, JSON.stringify(Array.from(newAgent.secretKey)));
+      setLoading(false)
     };
 
     inner().catch((error) => {
+      setLoading(false);
       console.error(error);
     });
   }, [publicKey, signMessage]);
@@ -215,7 +218,7 @@ export default function Home() {
         <WalletMultiButton />
         <WalletDisconnectButton />
         {canEnableTrading && !canTrade && (
-          <Button onClick={handleEnableTrading}>
+          <Button onClick={handleEnableTrading} loading={loading}>
             Enable Trading
           </Button>
         )}
