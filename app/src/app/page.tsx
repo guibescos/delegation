@@ -79,7 +79,7 @@ export default function Home() {
       nextPromise.current = new Promise<void>((resolve) => {
         nextResolve.current = resolve; 
       });
-      const subscriptionId = connection.onAccountChange(getCounterAddress(publicKey!), () => {
+      const subscriptionId = connection.onAccountChange(getCounterAddress(publicKey), () => {
         if (nextResolve.current) {
           nextResolve.current();
         }
