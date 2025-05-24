@@ -1,20 +1,15 @@
 import type { Metadata, Viewport } from "next";
 
 export const metadata = {
-  metadataBase: new URL("https://delegation.fogo.io"),
   title: {
-    default: "Delegation Demo",
-    template: "%s | Delegation Demo",
+    default: "Gasless Trading Demo",
+    template: "%s | Gasless Trading Demo",
   },
-  applicationName: "Delegation Demo",
-  description: "A demo of delegation.",
+  applicationName: "Gasless Trading Demo",
+  description: "A demo of gasless trading.",
   referrer: "strict-origin-when-cross-origin",
   openGraph: {
     type: "website",
-  },
-  twitter: {
-    creator: "@fogochain",
-    card: "summary_large_image",
   },
   icons: {
     icon: [

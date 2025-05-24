@@ -134,7 +134,7 @@ export default function Home() {
 
 
       const message = {
-        "fogoChainId": "localnet",
+        "chaindId": process.env.NEXT_PUBLIC_CHAIN_ID,
         "agentAddress": newAgent.publicKey.toBase58(),
         "nonce": Math.floor(Date.now() / 1000),
       }

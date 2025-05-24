@@ -1,5 +1,5 @@
 {
-  "name": "@pythnetwork/delegation-registry",
+  "name": "delegation-registry",
   "version": "0.0.0",
   "private": true,
   "type": "module",
