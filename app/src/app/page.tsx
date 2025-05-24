@@ -112,10 +112,18 @@ export default function Home() {
     setCounter(counter? counter.counter.toNumber() : 0);
   }, [publicKey]);
 
+  useEffect(() => {
+    if (publicKey) {
+      const agent = localStorage.getItem(`agent-${publicKey.toBase58()}`);
+      if (agent) {
+        setAgent(Keypair.fromSecretKey(Uint8Array.from(JSON.parse(agent))));
+      }
+    }
+  }, [publicKey]);
+
   const handleEnableTrading = useCallback(() => {
     const inner = async () => {
       const newAgent = Keypair.generate();
-      setAgent(newAgent);
 
       const transaction = await delegationProgram.methods.setDelegation().accounts({
         payer: payer,
@@ -142,7 +150,10 @@ export default function Home() {
         },
         body:  JSON.stringify(Buffer.from(signedTransaction.serialize({requireAllSignatures: false}))),
       })
+      setAgent(newAgent);
+      localStorage.setItem(`agent-${publicKey!.toBase58()}`, JSON.stringify(Array.from(newAgent.secretKey)));
     };
+
     inner().catch((error) => {
       console.error(error);
     });
@@ -185,6 +196,16 @@ export default function Home() {
     });
   }, [agent]);
 
+  const handleDisableTrading = useCallback(() => {
+    const inner = async () => {
+      localStorage.removeItem(`agent-${publicKey!.toBase58()}`);
+      setAgent(null);
+    }
+    inner().catch((error) => {
+      console.error(error);
+    });
+  }, [publicKey]);
+
   const canEnableTrading = publicKey && signMessage;
   const canTrade = agent && publicKey;
   return (
@@ -205,6 +226,11 @@ export default function Home() {
             </Button>
           )
         }
+        { canTrade && (
+          <Button onClick={handleDisableTrading}>
+            Disable Trading
+          </Button>
+        )}
         {canTrade && lastTradeLatency && (
           <p>Last trade latency: {lastTradeLatency}ms</p>
         )}
