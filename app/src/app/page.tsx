@@ -132,14 +132,12 @@ export default function Home() {
         agent: newAgent.publicKey,
       }).transaction();
 
-
-      const message = {
-        "chaindId": process.env.NEXT_PUBLIC_CHAIN_ID,
-        "sessionKey": newAgent.publicKey.toBase58(),
-        "domain": "gasless-trading.vercel.app",
-        "nonce": Math.floor(Date.now() / 1000),
-      }
-      await signMessage!(new TextEncoder().encode(JSON.stringify(message)));
+      await signMessage!(new TextEncoder().encode(`
+        chain_id: ${process.env.NEXT_PUBLIC_CHAIN_ID}
+        session_key: ${newAgent.publicKey.toBase58()}
+        nonce: ${Math.floor(Date.now() / 1000)}
+        domain: gasless-trading.vercel.app
+      `));
 
       transaction.recentBlockhash = (await provider.connection.getLatestBlockhash()).blockhash;
       transaction.feePayer =  payer;
